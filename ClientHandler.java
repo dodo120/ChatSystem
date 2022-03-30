@@ -6,7 +6,7 @@ import java.io.OutputStreamWriter;
 import java.net.Socket;
 import java.util.ArrayList;
 
-public class ClientHandler implements Runnable{
+public class ClientHandler implements Runnable {
 	
 	public static ArrayList<ClientHandler> clientHandlers = new ArrayList<>();
 	private Socket socket;
@@ -21,7 +21,7 @@ public class ClientHandler implements Runnable{
 			this.bufferedWriter = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
 			this.clientUsername = bufferedReader.readLine();
 			clientHandlers.add(this);
-			broadcastMessage("SERVER:" + clientUsername);
+			broadcastMessage("SERVER " + clientUsername + " has entered the chat!");
 		} catch(IOException e) {
 			closeEverything(socket,bufferedReader,bufferedWriter);
 		}
@@ -34,13 +34,7 @@ public class ClientHandler implements Runnable{
 		while(socket.isConnected()) {
 			try {
 				messageFromClient = bufferedReader.readLine();
-				String test = clientUsername+":quit";
-				if(test.equals(messageFromClient)) {
-					broadcastMessage(messageFromClient);
-					closeEverything(socket, bufferedReader, bufferedWriter);
-				} else {
-					broadcastMessage(messageFromClient);
-				}
+				broadcastMessage(messageFromClient);
 			} catch(IOException e) {
 				closeEverything(socket, bufferedReader, bufferedWriter);
 				break;
@@ -49,7 +43,6 @@ public class ClientHandler implements Runnable{
 	}
 	
 	public void broadcastMessage(String message) {
-		
 		for(int i = 0 ; i<clientHandlers.size();i++) {
 			try {
 				ClientHandler clientHandler = clientHandlers.get(i);
@@ -66,6 +59,7 @@ public class ClientHandler implements Runnable{
 	
 	public void removeClientHandler() {
 		clientHandlers.remove(this);
+		broadcastMessage("SERVER : " + clientUsername + " has left the chat");
 	}
 	
 	public void closeEverything(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter) {
