@@ -25,6 +25,75 @@ public class Client {
 			closeEverything(socket,bufferedReader,bufferedWriter);
 		}
 	}
+
+	public void sendMessage() {
+		try {
+			bufferedWriter.write(username);
+			bufferedWriter.newLine();
+			bufferedWriter.flush();
+			
+			Scanner scanner = new Scanner(System.in);
+			
+			while(socket.isConnected()) {
+				String messageToSend = scanner.nextLine();
+				if(messageToSend.equals("quit")) {
+					bufferedWriter.write(username+":quit");
+					bufferedWriter.newLine();
+					bufferedWriter.flush();
+					System.exit(1);
+				} else {
+					bufferedWriter.write("["+username+"]>" + messageToSend);
+					bufferedWriter.newLine();
+					bufferedWriter.flush();
+				}
+			}
+		} catch(IOException e) {
+			closeEverything(socket,bufferedReader,bufferedWriter);
+		}
+	}
+	
+	public void listenForMessage() {
+		new Thread(new Runnable() {
+
+			@Override
+			public void run() {
+				String messageFromGroupChat;
+				
+				while(socket.isConnected()) {
+					try {
+						messageFromGroupChat = bufferedReader.readLine();
+						if(messageFromGroupChat.split(":")[0].equals("SERVER")) {
+							System.out.println(messageFromGroupChat.split(":")[1] + " joined the chat");
+						} else
+						
+						if(messageFromGroupChat.split(":")[1].equals("quit")) {
+							System.out.println(messageFromGroupChat.split(":")[0] + " has left the chat");
+						} else {
+							String[] messageSplit = messageFromGroupChat.split(">")[1].split(":");
+							String[] destinataires = messageSplit[0].split(";");
+							
+							if(destinataires.length == 1 && destinataires[0].equals("all")) {
+								System.out.println(messageFromGroupChat.split(">")[0] + " " +messageSplit[1]);
+							} else {
+								for(int i=0;i<destinataires.length;i++) {
+									if(destinataires[i].equals(username)) {
+										System.out.println(messageFromGroupChat.split(">")[0]+messageSplit[1]);
+									}
+								}
+							}
+							messageSplit = null;
+							destinataires = null;
+						} 	
+						
+					} catch (IOException e) {
+						closeEverything(socket,bufferedReader,bufferedWriter);
+					}
+				}
+				
+			}
+			
+		}).start();
+	}
 	
 	public void closeEverything(Socket socket, BufferedReader bufferedReader, BufferedWriter bufferedWriter) {
 		try {
@@ -50,7 +119,8 @@ public class Client {
 		String username = scanner.nextLine();
 		Socket socket = new Socket("localhost",1234);
 		Client client = new Client(socket, username);
-
+		client.listenForMessage();
+		client.sendMessage();
 	}
 }
 
